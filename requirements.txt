@@ -1,0 +1,12 @@
+streamlit
+python-dotenv
+azure-ai-inference
+azure-core
+google-generativeai
+openai
+mistralai
+requests
+seaborn
+matplotlib
+pandas
+numpy
