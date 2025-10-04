@@ -14,12 +14,12 @@ A comprehensive tool for analyzing Python code complexity and benchmarking AI mo
 
 ### Supported AI Models
 - **OpenAI**: GPT-5, GPT-4o
-- **Anthropic**: Claude 3.5 Sonnet
-- **Google**: Gemini 1.5 Pro
-- **Mistral AI**: Mistral Large, Codestral
-- **Meta**: Llama 3.1 (405B, 70B, 8B)
-- **Microsoft**: Phi-3.5 Mini
-- **Alibaba**: Qwen2.5 Coder
+- **Anthropic**: Claude 4 Sonnet
+- **Google**: Gemini 2.5 Flash
+- **Mistral AI**: Mistral Medium
+- **Meta**: Llama 4 Maverick
+- **Microsoft**: Phi-4
+- **Alibaba**: Qwen3
 - **DeepSeek**: DeepSeek V3
 - **xAI**: Grok-3
 - **Cohere**: Command R+
