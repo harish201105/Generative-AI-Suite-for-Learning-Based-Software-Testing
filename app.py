@@ -159,20 +159,20 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Model status indicators
+    # Model status indicators  
     st.markdown("### 🤖 Model Status")
     
     model_status = {
-        "GPT-5": "🟢 Ready",
-        "Claude 4": "🟢 Ready",
-        "Gemini 2.5": "🟢 Ready",
-        "Mistral": "🟢 Ready",
-        "Llama-4": "🟢 Ready",
-        "Phi 4": "🟢 Ready",
-        "Qwen3": "🟢 Ready",
-        "DeepSeek-V3": "🟢 Ready",
-        "Grok 3": "🟢 Ready",
-        "Cohere": "🟢 Ready"
+        "GPT-5": "� Lazy Loading",
+        "Claude 4": "� Lazy Loading", 
+        "Gemini 2.5": "� Lazy Loading",
+        "Mistral": "� Lazy Loading",
+        "Llama-4": "� Lazy Loading",
+        "Phi 4": "� Lazy Loading",
+        "Qwen3": "� Lazy Loading",
+        "DeepSeek-V3": "� Lazy Loading",
+        "Grok 3": "� Lazy Loading",
+        "Cohere": "� Lazy Loading"
     }
     
     for model, status in model_status.items():
@@ -270,19 +270,38 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**Version:** 2.0.0 | **Updated:** Sept 2025")
 
-# Initialize models and analyzers with error handling
+# Initialize models and analyzers with LAZY LOADING to prevent page unresponsiveness
+@st.cache_resource
+def get_model(model_name):
+    """Lazy load models only when needed to prevent page blocking."""
+    try:
+        if model_name == "GPT":
+            return GPTModel()
+        elif model_name == "Cohere":
+            return CohereModel()
+        elif model_name == "Mistral":
+            return MistralModel()
+        elif model_name == "Llama":
+            return LlamaModel()
+        elif model_name == "Qwen":
+            return QwenModel()
+        elif model_name == "Phi":
+            return PhiModel()
+        elif model_name == "Claude":
+            return ClaudeModel()
+        elif model_name == "Gemini":
+            return GeminiModel()
+        elif model_name == "DeepSeek":
+            return DeepSeekV3Model()
+        elif model_name == "Grok":
+            return Grok3Model()
+    except Exception as e:
+        st.error(f"Failed to initialize {model_name}: {str(e)}")
+        return None
+
+# Initialize only essential components immediately
 try:
-    gpt_model = GPTModel()
-    cohere_model = CohereModel()
-    mistral_model = MistralModel()
-    llama_model = LlamaModel()
-    qwen_model = QwenModel()
-    phi_model = PhiModel()
-    claude_model = ClaudeModel()
-    gemini_model = GeminiModel()
-    deepseek_v3_model = DeepSeekV3Model()
-    grok3_model = Grok3Model()
-    complexity_analyzer = ComplexityAnalyzer()  # Now uses the advanced analyzer
+    complexity_analyzer = ComplexityAnalyzer()
     
     # Initialize performance analyzer with session state
     if 'performance_analyzer' not in st.session_state:
@@ -290,12 +309,8 @@ try:
     performance_analyzer = st.session_state.performance_analyzer
     
     models_available = True
-except ValueError as e:
-    st.error(f"Configuration Error: {str(e)}")
-    st.info("Please check your .env file and ensure you have the required API keys configured.")
-    models_available = False
 except Exception as e:
-    st.error(f"Unexpected error initializing models: {str(e)}")
+    st.error(f"Unexpected error initializing core components: {str(e)}")
     models_available = False
 
 if not models_available:
@@ -365,45 +380,36 @@ if models_available:
     st.markdown("### 🤖 AI Model Selection")
     st.markdown("Choose from our premium collection of AI models from leading providers worldwide.")
     
-    # Organize models by provider
-    model_providers = {
-        "🔮 OpenAI": {
-            "GPT-5 (with GPT-4o fallback)": gpt_model,
-        },
-        "🧠 Anthropic": {
-            "Claude Sonnet 4": claude_model,
-        },
-        "🌟 Google": {
-            "Gemini 2.5 Flash": gemini_model,
-        },
-        "⚡ Mistral AI": {
-            "Mistral Medium 2505": mistral_model,
-        },
-        "🦙 Meta": {
-            "Llama-4-Maverick-17B-128E": llama_model,
-        },
-        "🔬 Microsoft": {
-            "Phi 4": phi_model,
-        },
-        "🎯 Alibaba": {
-            "Qwen3-32B": qwen_model,
-        },
-        "🚀 DeepSeek": {
-            "DeepSeek-V3-0324": deepseek_v3_model,
-        },
-        "⚡ xAI": {
-            "Grok 3": grok3_model,
-        },
-        "🌐 Cohere": {
-            "Cohere Command A": cohere_model,
-        }
+    # Model mapping for lazy loading
+    model_mapping = {
+        "GPT-5 (with GPT-4o fallback)": "GPT",
+        "Claude Sonnet 4": "Claude",
+        "Gemini 2.5 Flash": "Gemini",
+        "Mistral Medium 2505": "Mistral",
+        "Llama-4-Maverick-17B-128E": "Llama",
+        "Phi 4": "Phi",
+        "Qwen3-32B": "Qwen",
+        "DeepSeek-V3-0324": "DeepSeek",
+        "Grok 3": "Grok",
+        "Cohere Command A": "Cohere"
     }
     
-    # Flatten for the multiselect
-    available_models = {}
-    for provider, models in model_providers.items():
-        for model_name, model_obj in models.items():
-            available_models[model_name] = model_obj
+    # Organize models by provider (display only)
+    model_providers = {
+        "🔮 OpenAI": ["GPT-5 (with GPT-4o fallback)"],
+        "🧠 Anthropic": ["Claude Sonnet 4"],
+        "🌟 Google": ["Gemini 2.5 Flash"],
+        "⚡ Mistral AI": ["Mistral Medium 2505"],
+        "🦙 Meta": ["Llama-4-Maverick-17B-128E"],
+        "🔬 Microsoft": ["Phi 4"],
+        "🎯 Alibaba": ["Qwen3-32B"],
+        "🚀 DeepSeek": ["DeepSeek-V3-0324"],
+        "⚡ xAI": ["Grok 3"],
+        "🌐 Cohere": ["Cohere Command A"]
+    }
+    
+    # Available models list
+    available_models = list(model_mapping.keys())
     
     # Create expandable sections for each provider
     col1, col2 = st.columns([2, 1])
@@ -411,7 +417,7 @@ if models_available:
     with col1:
         selected_models = st.multiselect(
             "Select Models to Compare",
-            options=list(available_models.keys()),
+            options=available_models,
             help="Choose one or more models to generate and compare test cases",
             default=[]
         )
@@ -485,7 +491,14 @@ if generate_button:
                 
                 # Create expandable section for each model
                 with st.expander(f"🤖 {model_name} Results", expanded=True):
-                    model = available_models[model_name]
+                    # Lazy load the model only when needed
+                    model_key = model_mapping[model_name]
+                    model = get_model(model_key)
+                    
+                    if model is None:
+                        st.error(f"❌ Failed to initialize {model_name}")
+                        continue
+                    
                     start_time = time.time()
                     
                     with st.spinner(f"Generating test cases using {model_name}..."):

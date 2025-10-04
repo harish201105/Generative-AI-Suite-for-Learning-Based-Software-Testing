@@ -14,12 +14,12 @@ A comprehensive tool for analyzing Python code complexity and benchmarking AI mo
 
 ### Supported AI Models
 - **OpenAI**: GPT-5, GPT-4o
-- **Anthropic**: Claude 4 Sonnet
-- **Google**: Gemini 2.5 Flash
-- **Mistral AI**: Mistral Large
-- **Meta**: Llama 4 Maverick 
-- **Microsoft**: Phi-4
-- **Alibaba**: Qwen3
+- **Anthropic**: Claude 3.5 Sonnet
+- **Google**: Gemini 1.5 Pro
+- **Mistral AI**: Mistral Large, Codestral
+- **Meta**: Llama 3.1 (405B, 70B, 8B)
+- **Microsoft**: Phi-3.5 Mini
+- **Alibaba**: Qwen2.5 Coder
 - **DeepSeek**: DeepSeek V3
 - **xAI**: Grok-3
 - **Cohere**: Command R+
@@ -280,12 +280,24 @@ python -c "from api.analysis.complexity_benchmarker import ComplexityBenchmarker
 - Write tests for new functionality
 - Update README for significant changes
 
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 ## 🙏 Acknowledgments
 
 - **AST Module**: Python's Abstract Syntax Tree for code analysis
 - **Streamlit**: For the beautiful web interface
 - **AI Providers**: OpenAI, Anthropic, Google, Mistral, Meta, Microsoft, Alibaba, DeepSeek, xAI, Cohere
 - **Open Source Community**: For the libraries and tools that make this possible
+
+## 📞 Support
+
+- **Issues**: Report bugs and feature requests on GitHub
+- **Documentation**: Check the code comments for detailed implementation notes
+- **Community**: Join discussions in the GitHub repository
+
+---
 
 **Last Updated**: September 23, 2025
 **Version**: 2.0.0

@@ -2,23 +2,13 @@ from typing import Dict, Any, List, Tuple, Set, Optional
 import re
 import ast
 import json
-import sys
-import os
-
-# Add current directory to path for imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-
-from advanced_complexity_analyzer import AdvancedPythonComplexityAnalyzer
 
 class ComplexityAnalyzer:
     """
-    Wrapper class that uses the Advanced Python Complexity Analyzer for accurate results.
-    Maintains backward compatibility with the existing API.
+    Self-contained complexity analyzer for Python code.
+    Provides time and space complexity analysis without external dependencies.
     """
     def __init__(self):
-        self.advanced_analyzer = AdvancedPythonComplexityAnalyzer()
-        
         # Keep the original complexity patterns for reference
         self.complexity_patterns = {
             'O(1)': ['constant', 'single operation', 'direct access'],
@@ -44,20 +34,114 @@ class ComplexityAnalyzer:
         }
 
     def analyze_test_case(self, test_code: str) -> Tuple[str, str]:
-        """Analyze a single test case for time and space complexity using the advanced analyzer."""
+        """Analyze a single test case for time and space complexity."""
         # First try pattern detection for quick results
         pattern_result = self._detect_algorithm_patterns(test_code)
         if pattern_result:
             return pattern_result
         
-        # For more sophisticated analysis, try to identify the main algorithmic function
-        # and analyze it specifically to avoid counting input data as part of space complexity
-        main_function = self._identify_main_function(test_code)
-        if main_function:
-            return self.advanced_analyzer.analyze_code_complexity(test_code, main_function)
+        # For more sophisticated analysis, perform AST-based analysis
+        return self._analyze_code_complexity(test_code)
+
+    def _analyze_code_complexity(self, code: str) -> Tuple[str, str]:
+        """Perform AST-based complexity analysis."""
+        try:
+            tree = ast.parse(code)
+            
+            # Count nested loops and recursive calls
+            loop_depth = self._count_nested_loops(tree)
+            recursive_calls = self._count_recursive_calls(tree)
+            
+            # Determine time complexity
+            if recursive_calls > 0:
+                if 'fibonacci' in code.lower() or 'fib' in code.lower():
+                    time_complexity = 'O(2^n)'
+                elif 'factorial' in code.lower():
+                    time_complexity = 'O(n!)'
+                else:
+                    time_complexity = 'O(2^n)'  # Conservative estimate for recursion
+            elif loop_depth >= 2:
+                time_complexity = 'O(n²)'
+            elif loop_depth == 1:
+                if 'sort' in code.lower() and ('merge' in code.lower() or 'quick' in code.lower()):
+                    time_complexity = 'O(n log n)'
+                else:
+                    time_complexity = 'O(n)'
+            else:
+                time_complexity = 'O(1)'
+            
+            # Determine space complexity
+            if recursive_calls > 0:
+                space_complexity = 'O(n)'  # Stack space for recursion
+            elif self._has_additional_data_structures(tree):
+                space_complexity = 'O(n)'
+            else:
+                space_complexity = 'O(1)'
+            
+            return time_complexity, space_complexity
+            
+        except Exception:
+            # Fallback to pattern matching
+            return self._fallback_analysis(code)
+
+    def _count_nested_loops(self, tree: ast.AST) -> int:
+        """Count the maximum nesting depth of loops."""
+        max_depth = 0
         
-        # Fallback to analyzing entire code
-        return self.advanced_analyzer.analyze_code_complexity(test_code)
+        def visit_node(node, current_depth=0):
+            nonlocal max_depth
+            if isinstance(node, (ast.For, ast.While)):
+                current_depth += 1
+                max_depth = max(max_depth, current_depth)
+            
+            for child in ast.iter_child_nodes(node):
+                visit_node(child, current_depth)
+        
+        visit_node(tree)
+        return max_depth
+
+    def _count_recursive_calls(self, tree: ast.AST) -> int:
+        """Count recursive function calls."""
+        function_names = set()
+        recursive_calls = 0
+        
+        # First pass: collect function names
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                function_names.add(node.name)
+        
+        # Second pass: count calls to these functions
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                if node.func.id in function_names:
+                    recursive_calls += 1
+        
+        return recursive_calls
+
+    def _has_additional_data_structures(self, tree: ast.AST) -> bool:
+        """Check if code creates additional data structures."""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    if node.func.id in ['list', 'dict', 'set', 'tuple']:
+                        return True
+                elif isinstance(node.func, ast.Attribute):
+                    if node.func.attr in ['append', 'extend', 'copy']:
+                        return True
+        return False
+
+    def _fallback_analysis(self, code: str) -> Tuple[str, str]:
+        """Fallback pattern-based analysis."""
+        code_lower = code.lower()
+        
+        if 'for' in code_lower and 'for' in code_lower[code_lower.find('for') + 3:]:
+            return 'O(n²)', 'O(1)'
+        elif 'for' in code_lower or 'while' in code_lower:
+            return 'O(n)', 'O(1)'
+        elif 'recursive' in code_lower or code_lower.count('def') > 1:
+            return 'O(2^n)', 'O(n)'
+        else:
+            return 'O(1)', 'O(1)'
 
     def _identify_main_function(self, test_code: str) -> Optional[str]:
         """Identify the main algorithmic function to analyze."""
@@ -341,8 +425,48 @@ class ComplexityAnalyzer:
         return 'O(1)'
 
     def analyze_test_cases(self, test_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Analyze all test cases and return complexity metrics using the advanced analyzer."""
-        return self.advanced_analyzer.analyze_test_cases(test_cases)
+        """Analyze all test cases and return complexity metrics."""
+        results = {
+            'total_test_cases': len(test_cases),
+            'complexities': [],
+            'worst_time_complexity': 'O(1)',
+            'worst_space_complexity': 'O(1)',
+            'average_complexity_score': 0
+        }
+        
+        complexity_scores = {
+            'O(1)': 1, 'O(log n)': 2, 'O(n)': 3, 'O(n log n)': 4,
+            'O(n²)': 5, 'O(n³)': 6, 'O(2^n)': 7, 'O(n!)': 8
+        }
+        
+        total_score = 0
+        
+        for test_case in test_cases:
+            test_code = test_case.get('test_code', '')
+            if test_code:
+                time_comp, space_comp = self.analyze_test_case(test_code)
+                
+                results['complexities'].append({
+                    'test_name': test_case.get('name', 'Unknown'),
+                    'time_complexity': time_comp,
+                    'space_complexity': space_comp
+                })
+                
+                # Track worst complexities
+                results['worst_time_complexity'] = self._get_worst_complexity(
+                    results['worst_time_complexity'], time_comp
+                )
+                results['worst_space_complexity'] = self._get_worst_complexity(
+                    results['worst_space_complexity'], space_comp
+                )
+                
+                # Calculate average score
+                total_score += complexity_scores.get(time_comp, 3)
+        
+        if len(test_cases) > 0:
+            results['average_complexity_score'] = total_score / len(test_cases)
+        
+        return results
 
     def _get_worst_complexity(self, comp1: str, comp2: str) -> str:
         """Determine the worst case complexity between two complexities."""
